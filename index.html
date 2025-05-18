@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Reputation Checker</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --success: #2ecc71;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .warning-banner {
+            background-color: rgba(243, 156, 18, 0.2);
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 0 5px 5px 0;
+            display: none;
+        }
+        
+        .result-container {
+            text-align: left;
+            margin-top: 25px;
+            display: none;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: #7f8c8d;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 18px;
+        }
+        
+        .score-high {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        
+        .score-medium {
+            color: var(--warning);
+            font-weight: bold;
+        }
+        
+        .score-low {
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP Reputation Checker</h1>
+        <p class="subtitle">Check the reputation and safety of any IP address</p>
+        
+        <div class="input-group">
+            <input type="text" id="ipInput" placeholder="Enter IP address (e.g., 8.8.8.8)" value="8.8.8.8">
+        </div>
+        
+        <div class="warning-banner" id="warningBanner">
+            Warning: This IP is considered high-risk!
+        </div>
+        
+        <button id="checkButton">Check IP</button>
+        
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+        </div>
+        
+        <div class="result-container" id="resultContainer">
+            <div class="result-item">
+                <span class="result-label">IP Address</span>
+                <span class="result-value" id="ipAddress">185.143.223.45</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Total Reports</span>
+                <span class="result-value" id="totalReports">42</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Last Reported At</span>
+                <span class="result-value" id="lastReported">4/15/2024, 6:04:56 PM</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Abuse Confidence Score</span>
+                <span class="result-value" id="abuseScore">75%</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Country Code</span>
+                <span class="result-value" id="countryCode">RU</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ipInput = document.getElementById('ipInput');
+            const checkButton = document.getElementById('checkButton');
+            const warningBanner = document.getElementById('warningBanner');
+            const resultContainer = document.getElementById('resultContainer');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            checkButton.addEventListener('click', checkIP);
+            ipInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') checkIP();
+            });
+            
+            function checkIP() {
+                const ip = ipInput.value.trim();
+                
+                if (!ip) {
+                    alert('Please enter an IP address');
+                    return;
+                }
+                
+                // Simple IP validation
+                if (!isValidIP(ip)) {
+                    alert('Please enter a valid IP address');
+                    return;
+                }
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'block';
+                resultContainer.style.display = 'none';
+                warningBanner.style.display = 'none';
+                
+                // Call your backend API
+                fetch('http://localhost:3000/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip: ip })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+                    
+                    // Update UI with results
+                    document.getElementById('ipAddress').textContent = data.ipAddress;
+                    document.getElementById('abuseScore').textContent = `${data.abuseConfidenceScore}%`;
+                    document.getElementById('countryCode').textContent = data.countryCode;
+                    
+                    // Set score class based on risk level
+                    const scoreElement = document.getElementById('abuseScore');
+                    if (data.abuseConfidenceScore >= 75) {
+                        scoreElement.className = 'result-value score-high';
+                        warningBanner.style.display = 'block';
+                    } else if (data.abuseConfidenceScore >= 50) {
+                        scoreElement.className = 'result-value score-medium';
+                    } else {
+                        scoreElement.className = 'result-value score-low';
+                    }
+                    
+                    // Show result container
+                    resultContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingIndicator.style.display = 'none';
+                    alert('Error checking IP. Please try again.');
+                });
+            }
+            
+            function isValidIP(ip) {
+                // Simple IPv4 validation
+                const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                return ipv4Regex.test(ip);
+            }
+        });
+    </script>
+</body>
+</html>
