@@ -32,18 +32,3 @@ The **IP Reputation Checker** is a simple web tool that allows users to check wh
 - **Sahil** – Frontend Developer (HTML)  
 - **Krishna** – Frontend Developer (CSS - pending)
 
----
-
-## 📁 Project Structure
-ip-reputation-checker/
-│
-├── public/
-│ ├── index.html # Frontend page
-│ └── script.js # JavaScript for API call
-│
-├── index.js # Node.js backend server
-├── .env # API Key (not pushed to GitHub)
-├── package.json # Project metadata and dependencies
-├── README.md # Project description
-
-
